@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>1031 Exchange Deadline Tracker</title>
+<meta name="description" content="Track your 1031 exchange's 45-day identification and 180-day closing deadlines. Miss either and the tax deferral dies.">
+<meta name="theme-color" content="#1F3522">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+:root{
+  --green:#1F3522; --ivory:#F5F2E8; --gold:#B49A5B; --oxblood:#5C2A2A; --charcoal:#2C2C2C;
+  --ivory-dim:#E7E1D0; --gold-dim:rgba(180,154,91,.35);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; background:var(--green); color:var(--ivory);
+  font-family:Georgia,'Times New Roman',serif; line-height:1.55;}
+.wrap{max-width:760px; margin:0 auto; padding:0 18px 60px;}
+.eyebrow{color:var(--gold); letter-spacing:.28em; font-size:11px; text-transform:uppercase;
+  text-align:center; padding-top:26px;}
+h1{font-size:clamp(30px,7vw,44px); text-align:center; margin:10px 0 6px; line-height:1.15;}
+.lede{text-align:center; color:var(--ivory-dim); font-size:16px; max-width:34em; margin:0 auto 22px;}
+.lede strong{color:var(--gold);}
+.steps{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 30px;}
+.step{background:rgba(245,242,232,.06); border:1px solid var(--gold-dim); border-radius:10px;
+  padding:12px 10px; text-align:center; font-size:13px; color:var(--ivory-dim);}
+.step b{display:block; color:var(--gold); font-size:22px; margin-bottom:4px;}
+@media(max-width:520px){.steps{grid-template-columns:1fr;} .step{font-size:14px;}}
+.card{background:var(--ivory); color:var(--charcoal); border-radius:14px; padding:20px;
+  margin-bottom:18px; box-shadow:0 6px 24px rgba(0,0,0,.35);}
+.card h2{margin:0 0 4px; font-size:21px; color:var(--green);}
+.card .sub{color:#5a5a5a; font-size:14px; margin:0 0 14px;}
+label{display:block; font-size:13px; letter-spacing:.08em; text-transform:uppercase;
+  color:#6b6b6b; margin:12px 0 4px;}
+input[type=text],input[type=date]{width:100%; padding:12px; font-size:16px; border-radius:8px;
+  border:1px solid #c9c2ab; background:#fff; color:var(--charcoal); font-family:inherit;}
+.btn{display:inline-block; background:var(--green); color:var(--ivory); border:none; border-radius:9px;
+  padding:13px 22px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:16px; width:100%;}
+.btn:active{transform:scale(.98);}
+.btn.gold{background:var(--gold); color:var(--green); font-weight:bold;}
+.btn.ghost{background:transparent; color:var(--green); border:1px solid var(--green); width:auto;
+  padding:8px 14px; font-size:14px; margin:8px 8px 0 0;}
+.btn.danger{background:transparent; color:var(--oxblood); border:1px solid var(--oxblood);
+  width:auto; padding:8px 14px; font-size:14px; margin:8px 0 0;}
+/* exchange cards */
+.xchg{background:var(--ivory); color:var(--charcoal); border-radius:14px; padding:20px;
+  margin-bottom:18px; box-shadow:0 6px 24px rgba(0,0,0,.35); border-top:6px solid var(--gold);}
+.xchg.urgent{border-top-color:var(--oxblood);}
+.xchg.dead{border-top-color:#1a1a1a;}
+.xchg.done{border-top-color:var(--green);}
+.xchg h3{margin:0; font-size:20px; color:var(--green);}
+.xchg .meta{font-size:13px; color:#6b6b6b; margin:2px 0 12px;}
+.clock{margin:10px 0;}
+.clock .row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;}
+.clock .name{font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:#6b6b6b;}
+.clock .date{font-size:15px; font-weight:bold; color:var(--green);}
+.clock .big{font-size:34px; font-weight:bold; color:var(--green); line-height:1;}
+.clock .big small{font-size:14px; font-weight:normal; color:#6b6b6b;}
+.bar{height:10px; background:#ddd6bf; border-radius:6px; overflow:hidden; margin-top:6px;}
+.bar i{display:block; height:100%; background:var(--gold); border-radius:6px; transition:width .4s;}
+.pill{display:inline-block; font-size:12px; letter-spacing:.12em; text-transform:uppercase;
+  padding:4px 12px; border-radius:20px; margin-top:8px; font-weight:bold;}
+.pill.ok{background:rgba(31,53,34,.12); color:var(--green);}
+.pill.warn{background:var(--oxblood); color:var(--ivory);}
+.pill.missed{background:#1a1a1a; color:var(--ivory);}
+.pill.done{background:var(--green); color:var(--ivory);}
+.done-note{background:rgba(31,53,34,.08); border:1px solid var(--green); border-radius:8px;
+  padding:10px 12px; font-size:14px; margin:10px 0 0;}
+/* checklist */
+.checks{margin-top:12px; border-top:1px solid #ddd6bf; padding-top:8px; display:none;}
+.checks.open{display:block;}
+.check{display:flex; gap:10px; align-items:flex-start; padding:9px 4px; font-size:14.5px;
+  border-bottom:1px dashed #e2dcc8; cursor:pointer;}
+.check:last-child{border-bottom:none;}
+.check input{width:20px; height:20px; margin-top:2px; accent-color:var(--green); flex-shrink:0;}
+.check.done span{color:#8a8a8a; text-decoration:line-through;}
+.prog{font-size:13px; color:#6b6b6b; margin:8px 0 0;}
+/* rules */
+.rules-h{color:var(--ivory); text-align:center; margin:34px 0 4px; font-size:24px;}
+.rules-s{text-align:center; color:var(--ivory-dim); font-size:14px; margin:0 0 18px;}
+.rule{background:rgba(245,242,232,.07); border:1px solid var(--gold-dim); border-radius:12px;
+  padding:16px 18px; margin-bottom:12px;}
+.rule h3{color:var(--gold); margin:0 0 6px; font-size:17px;}
+.rule p{margin:0; font-size:14.5px; color:var(--ivory-dim);}
+.rule p+p{margin-top:8px;}
+.rule .tag{display:inline-block; font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--green); background:var(--gold); border-radius:4px; padding:2px 8px; margin-bottom:8px; font-weight:bold;}
+footer{margin-top:36px; padding:18px; border:1px solid var(--gold-dim); border-radius:12px;
+  font-size:13px; color:var(--ivory-dim);}
+footer strong{color:var(--gold);}
+.empty{text-align:center; color:var(--ivory-dim); padding:26px 10px; font-size:15px;
+  border:1px dashed var(--gold-dim); border-radius:12px; margin-bottom:18px;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">The Bull Brew &middot; Daily Tool</div>
+  <h1>1031 Exchange Deadline Tracker</h1>
+  <p class="lede">Sell an investment property and the IRS gives you <strong>two clocks</strong>:
+  <strong>45 days</strong> to identify replacements, <strong>180 days</strong> to close.
+  Miss either and the tax deferral dies. This page watches both clocks for you.</p>
+
+  <div class="steps">
+    <div class="step"><b>1</b>Enter your sale closing date below.</div>
+    <div class="step"><b>2</b>Get your exact Day-45 and Day-180 dates with live countdowns.</div>
+    <div class="step"><b>3</b>Work the readiness checklist so nothing slips.</div>
+  </div>
+
+  <div class="card">
+    <h2>Start a new exchange</h2>
+    <p class="sub">Both clocks start ticking the day your relinquished property closes.</p>
+    <label for="xname">Property nickname</label>
+    <input type="text" id="xname" placeholder="e.g. Maple St duplex" maxlength="60">
+    <label for="xdate">Sale closing date</label>
+    <input type="date" id="xdate">
+    <button class="btn gold" id="addBtn">Start tracking these deadlines</button>
+  </div>
+
+  <div id="list"></div>
+  <div class="empty hidden" id="emptyState">No exchanges tracked yet. Add your sale closing date above and the clocks start.</div>
+
+  <h2 class="rules-h">The rules, in plain English</h2>
+  <p class="rules-s">Know these cold before your closing date. Each one can kill the exchange.</p>
+  <div id="rules"></div>
+
+  <footer>
+    <strong>Not tax advice.</strong> A 1031 exchange is a tax transaction with real money
+    on the line. Always work with a qualified intermediary and your CPA or tax attorney
+    before relying on any date or rule shown here. Deadlines include weekends and holidays &mdash;
+    there are no extensions for being busy.
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ---------- date math (day 1 = the day AFTER closing) ---------- */
+function parseISO(s){var p=s.split("-");return new Date(p[0],p[1]-1,p[2]);}
+function fmt(d){return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});}
+function addDays(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function dayStart(d){var r=new Date(d);r.setHours(0,0,0,0);return r;}
+function daysLeft(deadline){return Math.round((dayStart(deadline)-dayStart(new Date()))/86400000);}
+
+/* ---------- rules content ---------- */
+var RULES=[
+ {tag:"The whole game",t:"Like-kind: real property for real property",
+  b:"You must trade investment or business real property for investment or business real property. Since 2018, only real estate qualifies \u2014 no equipment, no art, no crypto. Your personal residence never qualifies."},
+ {tag:"Clock one",t:"45 days to identify replacements",
+  b:"By midnight of the 45th day after closing, you must identify your replacement properties in a signed writing delivered to your intermediary. Late by one day = the exchange fails. Weekends and holidays count."},
+ {tag:"Identification",t:"The 3-property rule",
+  b:"Identify up to 3 replacement properties, at any value. This is the rule most investors use \u2014 simple and safe. Describe each property unambiguously (street address or legal description)."},
+ {tag:"Identification",t:"The 200% rule",
+  b:"Need more than 3 candidates? You may identify any number of properties, as long as their combined fair market value is not more than 200% of the value of everything you sold."},
+ {tag:"Identification",t:"The 95% rule",
+  b:"Identify any number of properties at any value \u2014 but then you must actually acquire 95% of the total value you identified. Almost nobody uses this one on purpose. Know it exists so you never trigger it by accident."},
+ {tag:"The money",t:"Never touch the funds \u2014 use a qualified intermediary",
+  b:"Sale proceeds must go straight to a qualified intermediary. If you actually or constructively receive the cash \u2014 even for a day \u2014 it is a taxable sale, not an exchange. Hire the intermediary BEFORE you close."},
+ {tag:"The taxpayer",t:"Same taxpayer on both sides",
+  b:"The person or entity that sells must be the person or entity that buys. Sell as an LLC, buy as the same LLC. Changing the ownership structure mid-exchange can blow it up."},
+ {tag:"Clock two",t:"180 days to close (or your tax return due date)",
+  b:"You must acquire the replacement property by the earlier of 180 days after closing, or the due date of your tax return for the year of the sale (including extensions). Sell late in the year and the return deadline can arrive first \u2014 file an extension to protect the full 180 days."},
+ {tag:"Keep it all",t:"Buy equal or greater, reinvest everything",
+  b:"To defer ALL the tax, the replacement property must be worth at least as much as what you sold, and every dollar of equity must be reinvested. Buy for less or pocket cash and the difference (\u201cboot\u201d) is taxable."}
+];
+
+/* ---------- checklist ---------- */
+var CHECKS=[
+ "Qualified intermediary hired BEFORE the sale closed",
+ "Sale proceeds wired to the intermediary \u2014 I never touched the funds",
+ "Property sold was investment/business property (not my residence)",
+ "Replacement candidates identified in signed writing by Day 45",
+ "Identification follows the 3-property, 200%, or 95% rule",
+ "Same taxpayer (person/entity) selling and buying",
+ "Replacement value \u2265 sale value, all equity reinvested",
+ "CPA or tax attorney briefed on the exchange",
+ "Replacement property acquired by Day 180 (or return due date)"
+];
+
+/* ---------- storage ---------- */
+var KEY="x1031-v1";
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));return d&&d.exchanges?d:{exchanges:[]};}catch(e){return {exchanges:[]};}}
+function save(d){localStorage.setItem(KEY,JSON.stringify(d));}
+var store=load();
+
+/* ---------- rendering ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+function clockHTML(label,deadline,total,done,doneLabel){
+  var left=daysLeft(deadline), cls, pill, big;
+  if(done){cls="done";pill='<span class="pill done">'+doneLabel+'</span>';big="";}
+  else if(left<0){cls="missed";pill='<span class="pill missed">Deadline missed</span>';big='<div class="big">'+Math.abs(left)+' <small>days past</small></div>';}
+  else{cls=left<=14?"warn":"ok";pill='<span class="pill '+(left<=14?"warn":"ok")+'">'+(left<=14?"Urgent \u2014 "+left+" days left":"On track")+"</span>";
+       big='<div class="big">'+left+' <small>day'+(left===1?"":"s")+' left</small></div>';}
+  var elapsed=Math.min(Math.max(total-Math.max(left,0),0),total);
+  var pct=done?100:Math.round(elapsed/total*100);
+  return '<div class="clock"><div class="row"><span class="name">'+label+'</span>'+
+    '<span class="date">'+fmt(deadline)+'</span></div>'+big+
+    '<div class="bar"><i style="width:'+pct+'%"></i></div>'+pill+'</div>';
+}
+
+function render(){
+  var box=document.getElementById("list");box.innerHTML="";
+  document.getElementById("emptyState").classList.toggle("hidden",store.exchanges.length>0);
+  store.exchanges.forEach(function(x){
+    var close=parseISO(x.closeDate);
+    var d45=addDays(close,45), d180=addDays(close,180);
+    var todayDay=Math.round((dayStart(new Date())-dayStart(close))/86400000);
+    var card=document.createElement("div");
+    var urgent=!x.closed&&!x.identified&&daysLeft(d45)>=0&&daysLeft(d45)<=14;
+    var dead=!x.closed&&((!x.identified&&daysLeft(d45)<0)||daysLeft(d180)<0);
+    card.className="xchg"+(x.closed?" done":dead?" dead":urgent?" urgent":"");
+    var nDone=CHECKS.filter(function(_,i){return x.checks[i];}).length;
+    var h='<h3>'+esc(x.name)+'</h3><div class="meta">Sold '+fmt(close)+' &middot; Day '+Math.max(todayDay,0)+' of the exchange</div>';
+    h+=clockHTML("Identify by \u2014 day 45",d45,45,x.identified,"Identified \u2713");
+    h+=clockHTML("Close by \u2014 day 180",d180,180,x.closed,"Acquired \u2713");
+    if(!x.closed){
+      if(!x.identified)h+='<button class="btn ghost" data-a="ident" data-id="'+x.id+'">Mark identified</button>';
+      h+='<button class="btn ghost" data-a="close" data-id="'+x.id+'">Mark closed / acquired</button>';
+    }else{
+      h+='<div class="done-note"><strong>Exchange complete.</strong> Both clocks stopped. Keep your intermediary\u2019s paperwork with your tax records.</div>';
+    }
+    h+='<button class="btn ghost" data-a="checks" data-id="'+x.id+'">Readiness checklist ('+nDone+'/'+CHECKS.length+')</button>';
+    h+='<button class="btn danger" data-a="del" data-id="'+x.id+'">Remove</button>';
+    h+='<div class="checks'+(x.openChecks?" open":"")+'" id="c-'+x.id+'"><p class="prog">'+nDone+' of '+CHECKS.length+' ready</p>';
+    CHECKS.forEach(function(c,i){
+      h+='<label class="check'+(x.checks[i]?" done":"")+'"><input type="checkbox" data-a="chk" data-id="'+x.id+'" data-i="'+i+'"'+(x.checks[i]?" checked":"")+'><span>'+esc(c)+'</span></label>';
+    });
+    h+='</div>';
+    card.innerHTML=h;box.appendChild(card);
+  });
+  var r=document.getElementById("rules");r.innerHTML="";
+  RULES.forEach(function(rl){
+    var d=document.createElement("div");d.className="rule";
+    d.innerHTML='<span class="tag">'+esc(rl.tag)+'</span><h3>'+esc(rl.t)+'</h3><p>'+esc(rl.b)+'</p>';
+    r.appendChild(d);
+  });
+}
+
+/* ---------- events ---------- */
+document.getElementById("addBtn").addEventListener("click",function(){
+  var name=document.getElementById("xname").value.trim()||"Untitled exchange";
+  var date=document.getElementById("xdate").value;
+  if(!date){alert("Pick your sale closing date first \u2014 both clocks start there.");return;}
+  store.exchanges.unshift({id:"x"+Date.now(),name:name,closeDate:date,identified:false,closed:false,openChecks:false,checks:{}});
+  save(store);render();
+  document.getElementById("xname").value="";document.getElementById("xdate").value="";
+});
+document.getElementById("list").addEventListener("click",function(e){
+  var t=e.target.closest("[data-a]");if(!t)return;
+  var x=store.exchanges.find(function(v){return v.id===t.getAttribute("data-id");});if(!x)return;
+  var a=t.getAttribute("data-a");
+  if(a==="del"&&confirm("Remove this exchange from the tracker?"))store.exchanges=store.exchanges.filter(function(v){return v!==x;});
+  if(a==="ident")x.identified=true;
+  if(a==="close")x.closed=true;
+  if(a==="checks")x.openChecks=!x.openChecks;
+  save(store);render();
+});
+document.getElementById("list").addEventListener("change",function(e){
+  var t=e.target.closest("[data-a=chk]");if(!t)return;
+  var x=store.exchanges.find(function(v){return v.id===t.getAttribute("data-id");});if(!x)return;
+  x.checks[t.getAttribute("data-i")]=t.checked;save(store);render();
+});
+
+/* ---------- pwa ---------- */
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){});}
+render();
+</script>
+</body>
+</html>
